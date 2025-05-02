@@ -8,4 +8,5 @@ Route::prefix('orders')->group(function () {
     Route::get('/', [OrderController::class, 'index']);
     Route::put('/{id}', [OrderController::class, 'update']);
     Route::get('/stats', [OrderController::class, 'stats']);
+    Route::get('filter/', [OrderController::class, 'filterByStatus']);
 }); 

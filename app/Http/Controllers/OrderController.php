@@ -35,17 +35,42 @@ class OrderController extends BaseController
     {
         try {
             $status = request()->query('status');
+            
+            if ($status && !in_array($status, ['pending', 'shipped'])) {
+                return $this->sendError('Invalid status. Allowed values: pending, shipped', [], 422);
+            }
+
             $orders = $status 
                 ? $this->orderRepository->getByStatus($status)
                 : $this->orderRepository->all();
                 
             return $this->sendResponse(
                 OrderResource::collection($orders),
-                'Orders retrieved successfully',
-                null
+                $status 
+                    ? "Orders filtered by status: {$status}"
+                    : 'All orders retrieved successfully',
+                $status ? ['status' => $status] : null
             );
         } catch (\Exception $e) {
             return $this->sendError('Error retrieving orders', [], 500);
+        }
+    }
+
+    public function filterByStatus(string $status): JsonResponse
+    {
+        try {
+            if (!in_array($status, ['pending', 'shipped'])) {
+                return $this->sendError('Invalid status. Allowed values: pending, shipped', [], 422);
+            }
+
+            $orders = $this->orderRepository->getByStatus($status);
+            return $this->sendResponse(
+                OrderResource::collection($orders),
+                "Orders filtered by status: {$status}",
+                ['status' => $status]
+            );
+        } catch (\Exception $e) {
+            return $this->sendError('Error filtering orders', [], 500);
         }
     }
 
@@ -72,8 +97,7 @@ class OrderController extends BaseController
     public function stats(): JsonResponse
     {
         try {
-            $status = request()->query('status');
-            $stats = $this->orderRepository->getOrderStats($status);
+            $stats = $this->orderRepository->getOrderStats();
             return $this->sendResponse(
                 new OrderStatsResource($stats),
                 'Order statistics retrieved successfully',
